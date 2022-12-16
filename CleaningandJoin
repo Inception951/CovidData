@@ -1,0 +1,125 @@
+Select *
+From CovidDeaths
+Order by 1
+
+--Select *
+--From CovidVaccinations
+--Order by 3,4
+
+Select Location, date, total_cases, new_cases, total_deaths, population
+From coviddeaths
+order by 1,2
+
+
+-- Looking at Total Cases vs Total Deaths
+
+Select Location, date, total_cases, total_deaths, (total_deaths/total_cases)*100 as MortalityRate
+From coviddeaths 
+where Location like 'United States%'
+order by 1 desc
+
+--Total Cases vs Population
+Select Location, date, total_cases, population, (total_cases/population)*100 as PercentageofPopulationContracted
+From CovidDeaths 
+where Location = 'United States'
+order by 2 desc
+
+--Looking at countries with highest infection rate 
+
+Select Location, population, MAX(total_cases) as HighestInfectionCount, Max((total_cases/population))*100 as PercentageofPopulationInfected
+From CovidDeaths 
+Group By Location, Population
+order by 4 desc
+
+--Looking at countries with highest death rate 
+
+Select Location, MAX(cast(total_deaths as int)) as TotalDeathCount
+From CovidDeaths 
+WHERE Continent is not null
+Group By Location
+order by 2 desc
+
+
+--Create View
+
+Create View PercentPopulationVaccinated as 
+
+Select dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations_smoothed_per_million,
+SUM(CONVERT(int,vac.new_vaccinations_smoothed_per_million)) OVER (Partition by dea.Location Order by dea.location,
+dea.Date) as RollingPeopleVaccinated
+FROM CovidDeaths as Dea
+join CovidVaccinations as vac
+	ON dea.location = vac.location
+	AND dea.date = vac.date
+WHERE dea.continent is not null
+--order by 2,3
+
+--Create Table that combines both table
+
+--Create blank Table AllCombined 
+CREATE TABLE [dbo].[AllCombined](
+[iso_code] [nvarchar](255) NULL
+,[continent] [nvarchar](255) NULL
+,[location] [nvarchar](255) NULL
+,[date] [nvarchar](255) NULL
+,[total_cases] [nvarchar](255) NULL
+,[new_cases] [nvarchar](255) NULL
+,[new_cases_smoothed] [nvarchar](255) NULL
+,[total_deaths] [nvarchar](255) NULL
+,[new_deaths] [nvarchar](255) NULL
+,[new_deaths_smoothed] [nvarchar](255) NULL
+,[total_cases_per_million] [nvarchar](255) NULL
+,[new_cases_per_million] [nvarchar](255) NULL
+,[new_cases_smoothed_per_million] [nvarchar](255) NULL
+,[total_deaths_per_million] [nvarchar](255) NULL
+,[new_deaths_per_million] [nvarchar](255) NULL
+,[new_deaths_smoothed_per_million] [nvarchar](255) NULL
+,[reproduction_rate] [nvarchar](255) NULL
+,[icu_patients] [nvarchar](255) NULL
+,[icu_patients_per_million] [nvarchar](255) NULL
+,[hosp_patients] [nvarchar](255) NULL
+,[hosp_patients_per_million] [nvarchar](255) NULL
+,[weekly_icu_admissions] [nvarchar](255) NULL
+,[weekly_icu_admissions_per_million] [nvarchar](255) NULL
+,[weekly_hosp_admissions] [nvarchar](255) NULL
+,[weekly_hosp_admissions_per_million] [nvarchar](255) NULL
+,[population] [nvarchar](255) NULL
+,[new_vaccinations_smoothed_per_million] [nvarchar](255) NULL)
+
+--Populate Table AllCombined 
+insert AllCombined
+select 
+v.[iso_code]
+,v.[continent]
+,v.[location]
+,v.[date]
+,v.[total_cases]
+,v.[new_cases]
+,v.[new_cases_smoothed]
+,v.[total_deaths]
+,v.[new_deaths]
+,v.[new_deaths_smoothed]
+,v.[total_cases_per_million]
+,v.[new_cases_per_million]
+,v.[new_cases_smoothed_per_million]
+,v.[total_deaths_per_million]
+,v.[new_deaths_per_million]
+,v.[new_deaths_smoothed_per_million]
+,v.[reproduction_rate]
+,v.[icu_patients]
+,v.[icu_patients_per_million]
+,v.[hosp_patients]
+,v.[hosp_patients_per_million]
+,v.[weekly_icu_admissions]
+,v.[weekly_icu_admissions_per_million]
+,v.[weekly_hosp_admissions]
+,v.[weekly_hosp_admissions_per_million]
+,d.[population]
+,d.[new_vaccinations_smoothed_per_million]
+FROM CovidDeaths as d
+LEFT JOIN CovidVaccinations as v
+	ON d.location = v.location
+	AND d.date = v.date
+WHERE d.continent is not null
+
+select * from allcombined
